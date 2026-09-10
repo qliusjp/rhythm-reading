@@ -149,76 +149,70 @@ html, body {
     margin: 0;
   }
 
-  /* Keep the original visual language, but use the horizontal space. */
+  /* HOME: compact controls + independently scrollable level list */
   #home {
-    max-width: 980px;
     width: 100%;
+    max-width: 1100px;
     margin: 0 auto;
+    min-height: 0;
   }
-
-  .h-hdr {
-    padding: 14px 24px 8px;
-  }
-
+  .h-hdr { padding: 10px 24px 5px; }
+  .h-title { font-size: 22px; }
+  .h-sub { font-size: 12px; }
   .h-section {
-    padding-left: 24px;
-    padding-right: 24px;
-    max-width: 760px;
+    padding: 0 24px 6px;
+    max-width: 900px;
     width: 100%;
     margin: 0 auto;
   }
-
+  .h-label { margin-bottom: 5px; }
+  .bpm-chip { height: 36px; }
+  .mode-pill { height: 36px; }
+  .toggle-row { padding: 8px 14px; }
   .level-list {
-    padding-left: 24px;
-    padding-right: 24px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 24px 18px;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    gap: 7px 10px;
     align-content: start;
-    max-width: 980px;
     width: 100%;
+    max-width: 1100px;
     margin: 0 auto;
   }
+  .lv-item { margin-bottom: 0; padding: 9px 12px; min-height: 58px; }
+  .lv-badge { width: 38px; height: 38px; }
+  .lv-icons { font-size: 14px; }
 
-  .lv-item {
-    margin-bottom: 0;
-  }
-
-  /* Game: staff gets the central area; controls sit at the bottom corners. */
-  #game {
-    width: 100%;
-    height: 100%;
-  }
-
-  .g-nav {
-    padding: 7px 18px 3px;
-  }
-
-  .measure-row {
-    padding: 0 18px 2px;
-  }
-
+  /* GAME: current score area stays visible above bottom thumb buttons */
+  #game { width: 100%; height: 100%; min-height: 0; }
+  .g-nav { padding: 4px 18px 2px; }
+  .nav-back { width: 34px; height: 34px; }
+  .measure-row { padding: 0 18px 2px; }
   .staff-viewport {
-    padding: 0 18px 112px;
+    min-height: 0;
+    padding: 0 18px 86px;
   }
-
-  .staff-track {
-    gap: 8px;
-  }
-
+  .staff-track { gap: 6px; }
+  .staff-slot { gap: 4px; }
+  .sh-label { font-size: 9px; margin-bottom: 1px; }
   .staff-card canvas.scvs {
     width: 100%;
-    height: auto;
-    min-height: 90px;
+    height: 64px;
+    display: block;
   }
 
   .fb-row {
     position: absolute;
     left: 50%;
-    bottom: 84px;
+    bottom: 70px;
     transform: translateX(-50%);
     z-index: 20;
     pointer-events: none;
+    height: 20px;
   }
 
   .tap-area {
@@ -226,73 +220,32 @@ html, body {
     left: 0;
     right: 0;
     bottom: 0;
-    height: 108px;
-    padding: 8px 18px 14px;
+    height: 78px;
+    padding: 5px 18px 7px;
     z-index: 30;
     pointer-events: none;
   }
-
-  .tap-area > * {
-    pointer-events: auto;
-  }
-
-  .tap-single {
-    width: min(360px, 34vw);
-    height: 82px;
-    margin: 0 auto;
-  }
-
+  .tap-area > * { pointer-events: auto; }
+  .tap-single { width: min(320px, 36vw); height: 64px; margin: 0 auto; }
   .tap-both-row {
-    height: 86px;
+    height: 66px;
     display: flex;
     justify-content: space-between;
     align-items: stretch;
     gap: 0;
   }
-
-  /* One large target in each bottom corner, sized for thumb tapping. */
   .tap-hand {
-    flex: 0 0 min(250px, 27vw);
-    height: 86px;
-    border-radius: 22px;
-    font-size: 15px;
+    flex: 0 0 min(230px, 25vw);
+    height: 66px;
+    border-radius: 18px;
+    font-size: 14px;
+    gap: 2px;
   }
+  .tap-hand .hi { font-size: 22px; }
 
-  .tap-hand:first-child {
-    margin-right: auto;
-  }
-
-  .tap-hand:last-child {
-    margin-left: auto;
-  }
-
-  .precount {
-    z-index: 60;
-  }
-
-  #result-ov {
-    padding: 18px 24px;
-  }
-
-  .r-bars {
-    max-width: 720px;
-  }
-
-  .r-btn, .r-ghost {
-    max-width: 560px;
-  }
-
-  /* On short landscape screens, reduce vertical chrome rather than shrinking controls. */
-  @media (max-height: 500px) {
-    .g-nav { padding-top: 4px; }
-    .nav-back { width: 34px; height: 34px; }
-    .measure-row { padding-bottom: 0; }
-    .staff-viewport { padding-bottom: 102px; }
-    .fb-row { bottom: 74px; }
-    .tap-area { height: 98px; padding-top: 6px; padding-bottom: 10px; }
-    .tap-both-row, .tap-hand { height: 78px; }
-    .tap-single { height: 74px; }
-  }
+  #result-ov { padding: 14px 24px; }
+  .r-bars { max-width: 720px; }
+  .r-btn, .r-ghost { max-width: 560px; }
 }
 
 /* Installed PWA: keep the experience deliberately landscape. */
@@ -738,8 +691,8 @@ function setupGameUI(){
   const ta=document.getElementById('tap-area');
   if(both){
     ta.innerHTML=`<div class="tap-both-row">
-      <button class="tap-hand" id="tap-r"><span class="hi">✋</span>右手</button>
       <button class="tap-hand" id="tap-l"><span class="hi">🤚</span>左手</button>
+      <button class="tap-hand" id="tap-r"><span class="hi">✋</span>右手</button>
     </div>`;
     document.getElementById('tap-r').addEventListener('pointerdown',e=>{e.preventDefault();onTap('r');});
     document.getElementById('tap-l').addEventListener('pointerdown',e=>{e.preventDefault();onTap('l');});
@@ -1402,10 +1355,13 @@ function stemTopY(NY){ return NY-STEM_LEN; }
 function drawStaff(canvasId, notes, hits, activeIdx, finalState){
   const cvs=document.getElementById(canvasId);
   if(!cvs) return;
-  const W=390, H=90;
+  const W=390;
+  const landscape=window.matchMedia('(orientation: landscape) and (min-width: 600px)').matches;
+  const H=landscape?64:90;
   cvs.width=W; cvs.height=H;
   const ctx=cvs.getContext('2d');
   ctx.clearRect(0,0,W,H);
+  if(landscape) ctx.scale(1,H/90);
 
   const ST=14, LG=13, SH=LG*4;
 
