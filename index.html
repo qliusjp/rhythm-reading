@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>リズム読譜</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#F6F5F3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="リズム読譜">
+<meta name="mobile-web-app-capable" content="yes">
+
+<style>
+:root{
+  --red:#C0284A;--red-light:#F5EAED;--red-dark:#8C1C34;
+  --bg:#F6F5F3;--white:#FFFFFF;--g1:#EFEFED;--g2:#D8D6D2;--g3:#A09E9A;--g4:#6A6865;--blk:#1A1917;
+  --r:16px;--sh:0 2px 12px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none}
+html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;color:var(--blk);overflow:hidden}
+#root{height:100%;display:flex;flex-direction:column;max-width:430px;margin:0 auto}
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+
+/* HOME */
+#home{background:var(--bg)}
+.h-hdr{padding:20px 20px 12px;display:flex;align-items:baseline;gap:10px}
+.h-title{font-size:24px;font-weight:800;color:var(--blk);letter-spacing:-.02em}
+.h-sub{font-size:13px;color:var(--g3);font-weight:500}
+.h-section{padding:0 20px 10px}
+.h-label{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--g3);text-transform:uppercase;margin-bottom:8px}
+.bpm-row{display:flex;gap:6px}
+.bpm-chip{flex:1;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;cursor:pointer;color:var(--g4);background:var(--white);border:1.5px solid var(--g2);transition:all .15s}
+.bpm-chip.on{background:var(--red);color:#fff;border-color:var(--red)}
+.mode-row{display:flex;gap:8px}
+.mode-pill{flex:1;height:42px;border-radius:21px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;cursor:pointer;border:1.5px solid var(--g2);color:var(--g4);background:var(--white);transition:all .15s;gap:6px}
+.mode-pill.on{border-color:var(--red);color:var(--red);background:var(--red-light)}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;background:var(--white);border:1.5px solid var(--g2);border-radius:14px;padding:12px 16px}
+.toggle-lbl{font-size:14px;font-weight:600;color:var(--blk)}
+.toggle-sub{font-size:11px;color:var(--g3);margin-top:2px}
+.switch{width:48px;height:28px;border-radius:14px;background:var(--g2);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.switch.on{background:var(--red)}
+.switch-knob{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:left .2s}
+.switch.on .switch-knob{left:22px}
+.level-list{flex:1;overflow-y:auto;padding:4px 20px 24px}
+.lv-item{background:var(--white);border-radius:14px;padding:12px 14px;margin-bottom:8px;cursor:pointer;box-shadow:var(--sh);display:flex;align-items:center;gap:12px;transition:transform .1s,box-shadow .1s}
+.lv-item:active{transform:scale(.98);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.lv-badge{width:42px;height:42px;border-radius:12px;background:var(--red-light);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--red);flex-shrink:0;line-height:1.1;text-align:center}
+.lv-badge.all{background:#E8F0FE;color:#1a6ef7}
+.lv-badge.adv{background:#F3E8FF;color:#7C3AED}
+.lv-info{flex:1;min-width:0}
+.lv-name{font-size:14px;font-weight:700;color:var(--blk)}
+.lv-desc{font-size:11px;color:var(--g3);margin-top:1px}
+.lv-icons{font-size:16px;margin-top:3px;letter-spacing:1px;color:var(--g4)}
+.lv-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.lv-arrow{font-size:20px;color:var(--g2)}
+.lv-best{font-size:11px;font-weight:700;color:var(--red);background:var(--red-light);padding:2px 7px;border-radius:8px;white-space:nowrap}
+.lv-best.none{color:var(--g3);background:transparent;padding:0}
+
+/* GAME */
+#game{background:var(--white);position:relative}
+.g-nav{padding:10px 16px 6px;display:flex;align-items:center;justify-content:space-between}
+.nav-back{width:38px;height:38px;border-radius:50%;background:var(--g1);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:var(--g4);flex-shrink:0}
+.progress-dots{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:center;flex:1;padding:0 8px}
+.pdot{width:7px;height:7px;border-radius:50%;background:var(--g2);transition:all .15s}
+.pdot.cur{background:var(--red);width:9px;height:9px}
+.pdot.ok{background:#4CAF50}
+.pdot.miss{background:var(--red);opacity:.5}
+.g-meta{font-size:12px;color:var(--g3);font-weight:600;flex-shrink:0;text-align:right}
+.measure-row{padding:2px 16px 4px;display:flex;align-items:center;justify-content:space-between}
+.m-label{font-size:12px;color:var(--g3);font-weight:600}
+.m-num{font-size:16px;font-weight:800;color:var(--red)}
+
+/* Staff scroll */
+.staff-viewport{position:relative;overflow:hidden;padding:0 12px;flex:1;min-height:0}
+.staff-track{display:flex;flex-direction:column;gap:8px}
+.staff-track.sliding{transition:transform .32s linear}
+.staff-slot{flex-shrink:0;display:flex;flex-direction:column;gap:6px}
+.staff-slot.next-slot{opacity:.35}
+.staff-block{display:flex;flex-direction:column}
+.sh-label{font-size:10px;font-weight:700;color:var(--g3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.staff-card{background:var(--white);border:1.5px solid var(--g1);border-radius:10px;overflow:hidden;position:relative}
+canvas.scvs{display:block;width:100%}
+.ph{position:absolute;top:0;bottom:0;width:2px;background:var(--red);border-radius:1px;opacity:0;pointer-events:none}
+.next-tag{font-size:10px;font-weight:700;color:var(--g3);background:var(--g1);padding:2px 7px;border-radius:7px;align-self:flex-start;letter-spacing:.04em}
+
+/* Feedback */
+.fb-row{height:26px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fb{font-size:14px;font-weight:700;opacity:0;transform:translateY(3px);transition:opacity .12s,transform .12s}
+.fb.show{opacity:1;transform:translateY(0)}
+.fb.ok{color:#2e7d32}.fb.ng{color:var(--red)}
+
+/* Precount */
+.precount{position:absolute;inset:0;background:rgba(255,255,255,.93);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:60;gap:6px}
+.precount.hidden{display:none}
+.pc-num{font-size:80px;font-weight:900;color:var(--red);line-height:1}
+.pc-lbl{font-size:13px;color:var(--g3);font-weight:600}
+
+/* TAP BUTTONS */
+.tap-area{padding:8px 12px 14px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.tap-single{width:100%;height:100px;border-radius:20px;background:var(--red);color:#fff;font-size:22px;font-weight:800;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(192,40,74,.35);transition:transform .07s,background .07s}
+.tap-single:active,.tap-single.pressed{transform:scale(.96);background:var(--red-dark)}
+.tap-both-row{display:flex;gap:10px;height:100px}
+.tap-hand{flex:1;border-radius:20px;background:var(--red);color:#fff;font-size:15px;font-weight:800;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;box-shadow:0 6px 20px rgba(192,40,74,.35);transition:transform .07s,background .07s}
+.tap-hand:active,.tap-hand.pressed{transform:scale(.96);background:var(--red-dark)}
+.tap-hand .hi{font-size:26px}
+
+/* Result */
+#result-ov{position:absolute;inset:0;background:rgba(255,255,255,.97);display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:100;padding:24px;overflow-y:auto}
+#result-ov.show{display:flex}
+.r-stars{font-size:38px;letter-spacing:6px}
+.r-score{font-size:50px;font-weight:900;color:var(--red);line-height:1}
+.r-sub{font-size:13px;color:var(--g3);font-weight:600}
+.r-best{font-size:13px;color:var(--red);font-weight:700}
+.r-bars{width:100%;background:var(--g1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:5px}
+.r-bar-row{display:flex;align-items:center;gap:8px;font-size:12px}
+.r-bar-lbl{width:48px;color:var(--g4);font-weight:600;flex-shrink:0}
+.r-bar-bg{flex:1;height:6px;background:var(--g2);border-radius:3px;overflow:hidden}
+.r-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.r-bar-pct{width:34px;text-align:right;font-weight:700;color:var(--blk)}
+.r-btn{width:100%;height:52px;border-radius:26px;background:var(--red);color:#fff;font-size:16px;font-weight:700;border:none;cursor:pointer;box-shadow:0 5px 18px rgba(192,40,74,.32)}
+.r-ghost{width:100%;height:46px;border-radius:23px;background:transparent;color:var(--red);font-size:14px;font-weight:600;border:1.5px solid var(--red);cursor:pointer}
+
+/* Review screen */
+.rv-item{background:var(--white);border-radius:12px;margin-bottom:10px;border:1.5px solid var(--g1);overflow:hidden;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.rv-item:active{border-color:var(--red)}
+.rv-item.playing{border-color:var(--red);box-shadow:0 0 0 2px rgba(192,40,74,.15)}
+.rv-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 6px}
+.rv-num{font-size:12px;font-weight:700;color:var(--red)}
+.rv-result{font-size:12px;font-weight:600;color:var(--g3)}
+.rv-result.ok{color:#388E3C}
+.rv-result.miss{color:var(--red)}
+.rv-play-btn{width:30px;height:30px;border-radius:50%;background:var(--red-light);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:background .15s}
+.rv-item.playing .rv-play-btn{background:var(--red);color:#fff}
+.rv-staff{padding:0 10px 10px}
+
+/* =========================
+   LANDSCAPE / PWA LAYOUT
+   ========================= */
+html, body {
+  overscroll-behavior: none;
+}
+
+@media (orientation: landscape) and (min-width: 600px) {
+  #root {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+  }
+
+  /* Keep the original visual language, but use the horizontal space. */
+  #home {
+    max-width: 980px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .h-hdr {
+    padding: 14px 24px 8px;
+  }
+
+  .h-section {
+    padding-left: 24px;
+    padding-right: 24px;
+    max-width: 760px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .level-list {
+    padding-left: 24px;
+    padding-right: 24px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    align-content: start;
+    max-width: 980px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .lv-item {
+    margin-bottom: 0;
+  }
+
+  /* Game: staff gets the central area; controls sit at the bottom corners. */
+  #game {
+    width: 100%;
+    height: 100%;
+  }
+
+  .g-nav {
+    padding: 7px 18px 3px;
+  }
+
+  .measure-row {
+    padding: 0 18px 2px;
+  }
+
+  .staff-viewport {
+    padding: 0 18px 112px;
+  }
+
+  .staff-track {
+    gap: 8px;
+  }
+
+  .staff-card canvas.scvs {
+    width: 100%;
+    height: auto;
+    min-height: 90px;
+  }
+
+  .fb-row {
+    position: absolute;
+    left: 50%;
+    bottom: 84px;
+    transform: translateX(-50%);
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  .tap-area {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 108px;
+    padding: 8px 18px 14px;
+    z-index: 30;
+    pointer-events: none;
+  }
+
+  .tap-area > * {
+    pointer-events: auto;
+  }
+
+  .tap-single {
+    width: min(360px, 34vw);
+    height: 82px;
+    margin: 0 auto;
+  }
+
+  .tap-both-row {
+    height: 86px;
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  /* One large target in each bottom corner, sized for thumb tapping. */
+  .tap-hand {
+    flex: 0 0 min(250px, 27vw);
+    height: 86px;
+    border-radius: 22px;
+    font-size: 15px;
+  }
+
+  .tap-hand:first-child {
+    margin-right: auto;
+  }
+
+  .tap-hand:last-child {
+    margin-left: auto;
+  }
+
+  .precount {
+    z-index: 60;
+  }
+
+  #result-ov {
+    padding: 18px 24px;
+  }
+
+  .r-bars {
+    max-width: 720px;
+  }
+
+  .r-btn, .r-ghost {
+    max-width: 560px;
+  }
+
+  /* On short landscape screens, reduce vertical chrome rather than shrinking controls. */
+  @media (max-height: 500px) {
+    .g-nav { padding-top: 4px; }
+    .nav-back { width: 34px; height: 34px; }
+    .measure-row { padding-bottom: 0; }
+    .staff-viewport { padding-bottom: 102px; }
+    .fb-row { bottom: 74px; }
+    .tap-area { height: 98px; padding-top: 6px; padding-bottom: 10px; }
+    .tap-both-row, .tap-hand { height: 78px; }
+    .tap-single { height: 74px; }
+  }
+}
+
+/* Installed PWA: keep the experience deliberately landscape. */
+@media (display-mode: standalone) and (orientation: portrait) {
+  body::before {
+    content: "横画面にしてください";
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    color: var(--blk);
+    font-size: 18px;
+    font-weight: 800;
+  }
+}
+
+</style>
+</head>
+<body>
+<div id="root">
+
+<!-- HOME -->
+<div id="home" class="screen active">
+  <div class="h-hdr">
+    <span class="h-title">リズム読譜</span>
+    <span class="h-sub">10小節練習</span>
+  </div>
+  <div class="h-section">
+    <div class="h-label">BPM</div>
+    <div class="bpm-row" id="bpm-row">
+      <div class="bpm-chip" data-bpm="60">60</div>
+      <div class="bpm-chip on" data-bpm="80">80</div>
+      <div class="bpm-chip" data-bpm="100">100</div>
+      <div class="bpm-chip" data-bpm="120">120</div>
+    </div>
+  </div>
+  <div class="h-section" style="padding-top:6px">
+    <div class="h-label">モード</div>
+    <div class="mode-row">
+      <div class="mode-pill on" data-mode="single">✋ 片手</div>
+      <div class="mode-pill" data-mode="both">🤲 両手</div>
+    </div>
+  </div>
+  <div class="h-section" style="padding-top:6px">
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-lbl">毎小節プレカウント</div>
+        <div class="toggle-sub">OFFの場合は初回のみ</div>
+      </div>
+      <div class="switch" id="precount-switch"><div class="switch-knob"></div></div>
+    </div>
+  </div>
+  <div class="level-list" id="level-list"></div>
+</div>
+
+<!-- GAME -->
+<div id="game" class="screen">
+  <div class="g-nav">
+    <div class="nav-back" id="back-btn">‹</div>
+    <div class="progress-dots" id="pdots"></div>
+    <div class="g-meta" id="g-meta"></div>
+  </div>
+  <div class="measure-row">
+    <span class="m-label" id="lv-name-disp"></span>
+    <span><span class="m-num" id="m-cur">1</span><span style="font-size:12px;color:#A09E9A"> / 10</span></span>
+  </div>
+  <div class="staff-viewport" id="staff-viewport">
+    <div class="staff-track" id="staff-track"></div>
+    <div class="ph" id="ph-r"></div>
+    <div class="ph" id="ph-l"></div>
+  </div>
+  <div class="fb-row"><div class="fb" id="fb"></div></div>
+  <div class="tap-area" id="tap-area"></div>
+  <div class="precount hidden" id="precount">
+    <div class="pc-num" id="pc-num">4</div>
+    <div class="pc-lbl">プリカウント</div>
+  </div>
+  <div id="result-ov">
+    <div class="r-stars" id="r-stars"></div>
+    <div class="r-score" id="r-score"></div>
+    <div class="r-sub" id="r-sub"></div>
+    <div class="r-best" id="r-best"></div>
+    <div class="r-bars" id="r-bars"></div>
+    <button class="r-btn" id="r-again">もう一度</button>
+    <button class="r-ghost" id="r-review">📋 問題を見直す</button>
+    <button class="r-ghost" id="r-home">レベル選択へ</button>
+  </div>
+</div>
+
+<!-- REVIEW SCREEN -->
+<div id="review" class="screen">
+  <div class="g-nav" style="flex-shrink:0">
+    <div class="nav-back" id="review-back">‹</div>
+    <div style="font-size:15px;font-weight:700;flex:1;text-align:center" id="review-title"></div>
+    <div style="width:38px"></div>
+  </div>
+  <div style="font-size:12px;color:var(--g3);text-align:center;padding:0 0 10px;flex-shrink:0">小節をタップすると正解のリズムを再生</div>
+  <div style="flex:1;overflow-y:auto;padding:0 12px 24px" id="review-list"></div>
+</div>
+
+</div>
+<script>
+// =====================
+// AUDIO
+// =====================
+let actx=null;
+const audioBufs={};
+
+function getCtx(){
+  if(!actx){
+    actx=new(window.AudioContext||window.webkitAudioContext)();
+    // Auto-resume whenever state changes to suspended
+    actx.onstatechange=()=>{ if(actx.state==='suspended') actx.resume(); };
+  }
+  return actx;
+}
+
+function ensureRunning(){
+  const ctx=getCtx();
+  if(ctx.state!=='running') ctx.resume();
+  return ctx;
+}
+
+function makePianoC(freq,dur,sr){
+  const len=Math.ceil(dur*sr);
+  const buf=actx.createBuffer(1,len,sr);
+  const ch=buf.getChannelData(0);
+  const harmonics=[[1,1.0],[2,0.55],[3,0.25],[4,0.12],[5,0.06],[6,0.03]];
+  for(let i=0;i<len;i++){
+    const t=i/sr;
+    const env=Math.exp(-t*(freq>300?3.5:2.0));
+    let v=0;
+    harmonics.forEach(([mul,amp])=>{ v+=amp*Math.sin(2*Math.PI*freq*mul*t); });
+    ch[i]=v*env*0.22;
+  }
+  return buf;
+}
+
+function makeClick(freq,amp,sr){
+  const len=Math.ceil(0.06*sr);
+  const buf=actx.createBuffer(1,len,sr);
+  const ch=buf.getChannelData(0);
+  for(let i=0;i<len;i++){
+    const t=i/sr;
+    ch[i]=amp*Math.sin(2*Math.PI*freq*t)*Math.exp(-t*60);
+  }
+  return buf;
+}
+
+function warmAudio(){
+  const ctx=ensureRunning();
+  if(audioBufs.ready) return;
+  const sr=ctx.sampleRate;
+  audioBufs.highC =makePianoC(523.25,1.0,sr);
+  audioBufs.lowC  =makePianoC(130.81,1.5,sr);
+  audioBufs.clickH=makeClick(1500,0.3,sr);
+  audioBufs.clickL=makeClick(1000,0.18,sr);
+  audioBufs.ready=true;
+  // Warm up audio thread with a silent burst
+  const g=ctx.createGain(); g.gain.value=0; g.connect(ctx.destination);
+  const s=ctx.createBufferSource(); s.buffer=audioBufs.clickL;
+  s.connect(g); s.start(0);
+}
+
+// Single unified play function — always uses current AudioContext time
+function playBufNow(buf){
+  if(!buf) return;
+  const ctx=ensureRunning();
+  // If still suspended after resume(), schedule slightly ahead to allow resume to complete
+  const t=ctx.state==='running' ? ctx.currentTime : ctx.currentTime+0.02;
+  try{
+    const src=ctx.createBufferSource();
+    src.buffer=buf;
+    src.connect(ctx.destination);
+    src.start(t);
+    src.onended=()=>{ try{ src.disconnect(); }catch(e){} };
+  }catch(e){}
+}
+
+// Schedule at an absolute AudioContext time (for metronome)
+function playBufAt(buf,atTime){
+  if(!buf) return;
+  const ctx=ensureRunning();
+  try{
+    const src=ctx.createBufferSource();
+    src.buffer=buf;
+    src.connect(ctx.destination);
+    src.start(atTime);
+    src.onended=()=>{ try{ src.disconnect(); }catch(e){} };
+  }catch(e){}
+}
+
+function click(strong){ playBufNow(strong?audioBufs.clickH:audioBufs.clickL); }
+function playPianoC(highC){ playBufNow(highC?audioBufs.highC:audioBufs.lowC); }
+function scheduleClick(strong,atTime){ playBufAt(strong?audioBufs.clickH:audioBufs.clickL,atTime); }
+function schedulePianoC(highC,atTime){ playBufAt(highC?audioBufs.highC:audioBufs.lowC,atTime); }
+
+// =====================
+// NOTE TYPES
+// b = duration in 1/48th (LCM of 16 and 3-tuplet)
+// Regular notes: 1/4=12, 1/8=6, 1/16=3, 1/2=24, dot-q=18, dot-e=9
+// Triplet notes: t3q=8 (quarter triplet), t3e=4 (eighth triplet)
+// Rest total per bar in 4/4 = 48
+// =====================
+const NT={
+  h:  {b:24, rest:false, tied:false},
+  q:  {b:12, rest:false, tied:false},
+  e:  {b:6,  rest:false, tied:false},
+  s:  {b:3,  rest:false, tied:false},
+  dq: {b:18, rest:false, tied:false},
+  de: {b:9,  rest:false, tied:false},
+  // Tied notes
+  'q+e': {b:18, rest:false, tied:true, parts:['q','e']},
+  'e+s': {b:9,  rest:false, tied:true, parts:['e','s']},
+  'q+q': {b:24, rest:false, tied:true, parts:['q','q']},
+  'e+e': {b:12, rest:false, tied:true, parts:['e','e']},
+  // Triplets: 3 fit in a quarter note (b=4 each, 3×4=12)
+  t3e: {b:4, rest:false, tied:false, triplet:true},
+  // Triplet rest
+  t3er:{b:4, rest:true,  tied:false, triplet:true},
+  // Rests
+  hr:  {b:24, rest:true},
+  qr:  {b:12, rest:true},
+  er:  {b:6,  rest:true},
+  sr:  {b:3,  rest:true},
+};
+const BAR=48; // 48 units per 4/4 bar
+
+// =====================
+// LEVELS
+// =====================
+const LEVELS=[
+  {id:1,  name:'Level 1',  desc:'4分音符のみ',       icons:'♩♩♩♩',     tag:'LV1', adv:false,
+   pool:[['q','q','q','q'],['q','q','h'],['h','q','q'],['h','h'],['q','h','q']]},
+  {id:2,  name:'Level 2',  desc:'2分・4分',          icons:'𝅗𝅥 ♩♩',      tag:'LV2', adv:false,
+   pool:[['h','h'],['q','q','h'],['h','q','q'],['q','q','q','q'],['q','h','q']]},
+  {id:3,  name:'Level 3',  desc:'8分音符',            icons:'♩♪♪♩',     tag:'LV3', adv:false,
+   pool:[['q','q','q','e','e'],['q','q','e','e','q'],['q','e','e','q','q'],['e','e','q','q','q'],
+         ['q','e','e','q','e','e'],['e','e','e','e','e','e','e','e'],
+         ['e','e','e','e','q','q'],['q','q','e','e','e','e']]},
+  {id:4,  name:'Level 4',  desc:'8分混合',            icons:'♪♪♪♪♩♩',  tag:'LV4', adv:false,
+   pool:[['e','e','e','e','q','q'],['q','e','e','e','e','q'],['e','e','q','e','e','q'],
+         ['e','e','e','e','e','e','e','e'],['q','e','e','q','e','e']]},
+  {id:5,  name:'Level 5',  desc:'付点音符',           icons:'♩.♪ ♩.♪',  tag:'LV5', adv:false,
+   pool:[['dq','e','dq','e'],['dq','e','q','q'],['q','q','dq','e'],
+         ['dq','e','e','e','q'],['q','dq','e','q']]},
+  {id:6,  name:'Level 6',  desc:'タイ',               icons:'♩⌒♪ ♩⌒♩', tag:'LV6', adv:false,
+   pool:[['q+e','e','q','q'],['e','q+e','q','q'],['q','e+s','s','q','q'],
+         ['q+q','q','q'],['e','e','q+e','e','q'],['q','q+e','e','q'],['e+e','e+e','q+e','e']]},
+  {id:7,  name:'Level 7',  desc:'16分音符',           icons:'♪.♬♬',    tag:'LV7', adv:false,
+   pool:[['de','s','de','s','de','s','de','s'],['de','s','de','s','q','q'],
+         ['q','q','de','s','de','s'],['de','s','de','s','e','e','e','e'],
+         ['q','de','s','q','e','e']]},
+  {id:8,  name:'Level 8',  desc:'休符入り',           icons:'♩𝄾♪♩',    tag:'LV8', adv:false,
+   pool:[['q','er','e','q','q'],['e','er','e','q','q'],['q','q','er','e','q'],
+         ['er','e','q','er','e','q'],['q','qr','e','e','q']]},
+  {id:9,  name:'Level 9',  desc:'シンコペ',           icons:'♪♩♪ ♪♩♪', tag:'LV9', adv:false,
+   pool:[['e','q','e','e','q','e'],['e','q','q','e','q'],
+         ['e','q','e','q','e','e'],['e','e','q','e','q','e']]},
+  {id:10, name:'Level 10', desc:'総合',               icons:'♩.♪ ♪.♬♩', tag:'LV10',adv:false,
+   pool:[['dq','e','de','s','q'],['q','de','s','dq','e'],['de','s','dq','e','q'],
+         ['dq','e','q','de','s'],['de','s','de','s','dq','e']]},
+  // ---- Advanced ----
+  {id:11, name:'Level 11', desc:'連桁パターン',       icons:'♪⌐♪⌐♪⌐♪', tag:'LV11',adv:true,
+   // Beamed 8th runs: visually grouped, rhythmically interesting
+   pool:[['e','e','e','e','e','e','q'],   // 6+6+6+6+6+6+12=48 ✓ wait 42 not 48
+         // recalculate with b units:
+         // e=6: [e,e,e,e,e,e,q] = 6*6+12=48 ✓
+         ['e','e','e','e','e','e','q'],
+         ['q','e','e','e','e','e','e'],
+         ['e','e','q','e','e','q'],
+         ['e','e','e','e','q','e','e'],
+         ['q','e','e','e','e','e','e'],
+         ['e','e','e','e','e','e','e','e'],
+         ['h','e','e','e','e'],
+         ['e','e','e','e','h']]},
+  {id:12, name:'Level 12', desc:'三連符',             icons:'♪₃♪₃♪₃',  tag:'LV12',adv:true,
+   // Triplets: 3×t3e = 12 units = 1 quarter. 4 quarters = 48
+   pool:[['t3e','t3e','t3e','t3e','t3e','t3e','t3e','t3e','t3e','t3e','t3e','t3e'], // all triplets
+         ['q','t3e','t3e','t3e','q','q'],
+         ['t3e','t3e','t3e','q','t3e','t3e','t3e','q'],
+         ['q','q','t3e','t3e','t3e','t3e','t3e','t3e'],
+         ['t3e','t3e','t3e','t3e','t3e','t3e','q','q']]},
+  {id:13, name:'Level 13', desc:'連桁＋三連符',      icons:'♪₃♪♬♪₃',  tag:'LV13',adv:true,
+   pool:[['t3e','t3e','t3e','e','e','q','q'],
+         ['q','t3e','t3e','t3e','e','e','e','e'],
+         ['e','e','t3e','t3e','t3e','e','e','q'],
+         ['t3e','t3e','t3e','q','de','s','q'],
+         ['q','q','t3e','t3e','t3e','t3e','t3e','t3e']]},
+  {id:14, name:'Level 14', desc:'8分＋16分 混合連桁', icons:'♪♬♬♪', tag:'LV14',adv:true,
+   pool:[
+     ['e','s','s','q','q','e','s','s'],
+     ['q','e','s','s','q','e','s','s'],
+     ['e','s','s','e','s','s','e','e','q'],
+     ['e','e','e','s','s','q','e','s','s'],
+     ['s','s','e','s','s','e','q','q'],
+   ]},
+  {id:99, name:'全レベル', desc:'全音符ランダム',     icons:'★',         tag:'ALL', adv:false,pool:null},
+];
+
+// Validate all pools: sum must equal BAR (48)
+function patSum(p){ return p.reduce((a,n)=>a+NT[n].b,0); }
+LEVELS.forEach(lv=>{
+  if(!lv.pool) return;
+  lv.pool=lv.pool.filter(p=>patSum(p)===BAR);
+});
+LEVELS[LEVELS.length-1].pool=LEVELS.slice(0,-1).flatMap(lv=>lv.pool||[]);
+
+// =====================
+// HIGH SCORES (localStorage)
+// =====================
+function getBest(levelId, mode){
+  try{ return JSON.parse(localStorage.getItem('best_'+levelId+'_'+mode)||'null'); }catch(e){ return null; }
+}
+function setBest(levelId, mode, pct){
+  try{
+    const prev=getBest(levelId,mode);
+    if(prev===null||pct>prev) localStorage.setItem('best_'+levelId+'_'+mode, JSON.stringify(pct));
+  }catch(e){}
+}
+
+// =====================
+// STATE
+// =====================
+let S={
+  bpm:80, mode:'single', level:null, precountEvery:false,
+  measure:0, measurePatterns:[], lPatterns:[],
+  playing:false, timers:[], curNote:-1,
+  rhits:[], lhits:[],
+  totalHit:0, totalNote:0, measureResults:[],
+  noteScheduleR:[], noteScheduleL:[],
+  armedHand:null, armedIdx:-1, armedPat:null, armedM:-1,
+  armedHandL:null, armedIdxL:-1, armedPatL:null, armedML:-1,
+  rafHandle:null, measureT0:0, slideDone:false,
+  curNoteL:-1, inLateGrace:false,
+};
+
+// =====================
+// HOME
+// =====================
+function buildHome(){
+  document.querySelectorAll('.bpm-chip').forEach(el=>{
+    el.addEventListener('click',()=>{
+      S.bpm=+el.dataset.bpm;
+      document.querySelectorAll('.bpm-chip').forEach(e=>e.classList.remove('on'));
+      el.classList.add('on');
+    });
+  });
+  document.querySelectorAll('.mode-pill').forEach(el=>{
+    el.addEventListener('click',()=>{
+      S.mode=el.dataset.mode;
+      document.querySelectorAll('.mode-pill').forEach(e=>e.classList.remove('on'));
+      el.classList.add('on');
+      refreshBestScores();
+    });
+  });
+  const pcSwitch=document.getElementById('precount-switch');
+  pcSwitch.addEventListener('click',()=>{
+    S.precountEvery=!S.precountEvery;
+    pcSwitch.classList.toggle('on',S.precountEvery);
+  });
+  renderLevelList();
+}
+
+function renderLevelList(){
+  const list=document.getElementById('level-list');
+  list.innerHTML='';
+  LEVELS.forEach(lv=>{
+    const all=lv.id===99;
+    const adv=lv.adv;
+    const best=getBest(lv.id, S.mode);
+    const el=document.createElement('div');
+    el.className='lv-item';
+    el.innerHTML=`
+      <div class="lv-badge${all?' all':adv?' adv':''}">${lv.tag}</div>
+      <div class="lv-info">
+        <div class="lv-name">${lv.name}${adv?' <span style="font-size:10px;color:#7C3AED;background:#F3E8FF;padding:1px 5px;border-radius:5px;vertical-align:middle">上級</span>':all?' ✦':''}</div>
+        <div class="lv-desc">${lv.desc}</div>
+        <div class="lv-icons">${lv.icons}</div>
+      </div>
+      <div class="lv-right">
+        <div class="lv-arrow">›</div>
+        <div class="lv-best${best===null?' none':''}" id="best-${lv.id}">${best!==null?best+'%':'未挑戦'}</div>
+      </div>`;
+    el.addEventListener('click',()=>{ warmAudio(); startSession(lv); });
+    list.appendChild(el);
+  });
+}
+
+function refreshBestScores(){
+  LEVELS.forEach(lv=>{
+    const el=document.getElementById('best-'+lv.id);
+    if(!el) return;
+    const best=getBest(lv.id, S.mode);
+    el.textContent=best!==null?best+'%':'未挑戦';
+    el.className='lv-best'+(best===null?' none':'');
+  });
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// =====================
+// SESSION
+// =====================
+function startSession(lv){
+  S.level=lv;
+  S.measure=0;
+  S.totalHit=0; S.totalNote=0;
+  S.measureResults=[];
+
+  const pool=lv.pool;
+  S.measurePatterns=[];
+  for(let i=0;i<10;i++){
+    let p;
+    do{ p=pool[Math.floor(Math.random()*pool.length)]; }
+    while(i>0&&S.measurePatterns[i-1]===p&&pool.length>1);
+    S.measurePatterns.push(p);
+  }
+  S.lPatterns=[];
+  for(let i=0;i<10;i++){
+    let p;
+    do{ p=pool[Math.floor(Math.random()*pool.length)]; }
+    while(i>0&&S.lPatterns[i-1]===p&&pool.length>1);
+    S.lPatterns.push(p);
+  }
+
+  showScreen('game');
+  setupGameUI();
+  nextMeasure(true);
+}
+
+function setupGameUI(){
+  const both=S.mode==='both';
+  document.getElementById('lv-name-disp').textContent=S.level.name;
+  document.getElementById('g-meta').textContent=`${S.bpm}BPM`;
+
+  const ta=document.getElementById('tap-area');
+  if(both){
+    ta.innerHTML=`<div class="tap-both-row">
+      <button class="tap-hand" id="tap-r"><span class="hi">✋</span>右手</button>
+      <button class="tap-hand" id="tap-l"><span class="hi">🤚</span>左手</button>
+    </div>`;
+    document.getElementById('tap-r').addEventListener('pointerdown',e=>{e.preventDefault();onTap('r');});
+    document.getElementById('tap-l').addEventListener('pointerdown',e=>{e.preventDefault();onTap('l');});
+  } else {
+    ta.innerHTML=`<button class="tap-single" id="tap-s">👇　タップ</button>`;
+    document.getElementById('tap-s').addEventListener('pointerdown',e=>{e.preventDefault();onTap('r');});
+  }
+  document.getElementById('back-btn').onclick=()=>{ stopAll(); showScreen('home'); };
+  updateDots();
+}
+
+// =====================
+// STAFF SLOTS
+// =====================
+function buildSlotHTML(idx, isNext){
+  const both=S.mode==='both';
+  return `<div class="staff-slot${isNext?' next-slot':''}" id="slot-${idx}">
+    ${isNext?'<div class="next-tag">次の小節</div>':''}
+    <div class="staff-block">
+      ${both?'<div class="sh-label">右手</div>':''}
+      <div class="staff-card"><canvas class="scvs" id="cvs-r-${idx}" width="390" height="90"></canvas></div>
+    </div>
+    ${both?`<div class="staff-block">
+      <div class="sh-label">左手</div>
+      <div class="staff-card"><canvas class="scvs" id="cvs-l-${idx}" width="390" height="90"></canvas></div>
+    </div>`:''}
+  </div>`;
+}
+
+function renderTrack(){
+  const track=document.getElementById('staff-track');
+  const ci=S.measure, ni=S.measure+1;
+  track.classList.remove('sliding');
+  track.style.transform='translateY(0)';
+  track.innerHTML=buildSlotHTML(ci,false)+(ni<=10?buildSlotHTML(ni,true):'');
+  track.offsetHeight;
+
+  const pat=S.measurePatterns[ci-1];
+  const lPat=S.mode==='both'?S.lPatterns[ci-1]:null;
+  drawStaff(`cvs-r-${ci}`,pat,S.rhits,-1,false);
+  if(lPat) drawStaff(`cvs-l-${ci}`,lPat,S.lhits,-1,false);
+
+  if(ni<=10) renderNextSlot(ni);
+}
+
+function renderNextSlot(ni){
+  if(ni>10) return;
+  const np=S.measurePatterns[ni-1], nlp=S.mode==='both'?S.lPatterns[ni-1]:null;
+  const cvsr=document.getElementById(`cvs-r-${ni}`);
+  const cvsl=document.getElementById(`cvs-l-${ni}`);
+  if(cvsr) drawStaff(`cvs-r-${ni}`,np,[],-1,false);
+  if(nlp&&cvsl) drawStaff(`cvs-l-${ni}`,nlp,[],-1,false);
+}
+
+function slideTrackUp(){
+  const track=document.getElementById('staff-track');
+  const curSlot=document.getElementById('slot-'+S.measure);
+  if(!curSlot||!track) return;
+  const h=curSlot.getBoundingClientRect().height;
+  track.classList.add('sliding');
+  track.style.transform=`translateY(-${h+8}px)`;
+}
+
+// =====================
+// MEASURE CYCLE
+// =====================
+function nextMeasure(isFirst){
+  clearMeasureTimers();
+  S.measure++;
+  if(S.measure>10){ showFinalResult(); return; }
+
+  const pat=S.measurePatterns[S.measure-1];
+  const lPat=S.mode==='both'?S.lPatterns[S.measure-1]:null;
+  S.rhits=new Array(pat.length).fill(null);
+  S.lhits=lPat?new Array(lPat.length).fill(null):[];
+  S.curNote=-1; S.curNoteL=-1;
+  S.noteScheduleR=[]; S.noteScheduleL=[];
+
+  document.getElementById('m-cur').textContent=S.measure;
+  updateDots();
+  hideFb();
+
+  if(isFirst){
+    renderTrack();
+  } else {
+    // Slot already pre-rendered and slid into place.
+    // Just reset the transform and promote next->current.
+    const track=document.getElementById('staff-track');
+    track.classList.remove('sliding');
+    track.style.transform='translateY(0)';
+
+    const nowCur=document.getElementById('slot-'+S.measure);
+    if(nowCur){
+      nowCur.classList.remove('next-slot');
+      const tag=nowCur.querySelector('.next-tag');
+      if(tag) tag.remove();
+    }
+
+    // Remove the old slot that slid away
+    const oldSlot=document.getElementById('slot-'+(S.measure-1));
+    if(oldSlot) oldSlot.remove();
+
+    // Append fresh next slot HTML and draw it in idle time
+    const ni=S.measure+1;
+    if(ni<=10){
+      track.insertAdjacentHTML('beforeend',buildSlotHTML(ni,true));
+      if(window.requestIdleCallback){
+        requestIdleCallback(()=>renderNextSlot(ni),{timeout:300});
+      } else {
+        setTimeout(()=>renderNextSlot(ni),0);
+      }
+    }
+
+    // Redraw current slot with fresh hits
+    drawStaff(`cvs-r-${S.measure}`,pat,S.rhits,-1,false);
+    if(lPat) drawStaff(`cvs-l-${S.measure}`,lPat,S.lhits,-1,false);
+  }
+
+  if(isFirst||S.precountEvery){
+    doPrecount(()=>playMeasure(pat,lPat));
+  } else {
+    playMeasure(pat,lPat);
+  }
+}
+
+
+
+function doPrecount(cb){
+  const ov=document.getElementById('precount');
+  const numEl=document.getElementById('pc-num');
+  ov.classList.remove('hidden');
+  const ctx=getCtx();
+  const beatSec=secPerUnit(S.bpm)*12; // seconds per beat
+  const startAt=ctx.currentTime+0.05; // small offset so first click doesn't clip
+
+  // Schedule all 4 click sounds on the audio timeline (sample-accurate)
+  for(let b=0;b<4;b++){
+    const t=startAt+b*beatSec;
+    scheduleClick(b===0, t);
+  }
+
+  // Drive the visual countdown via rAF, checking audioCtx.currentTime
+  let shown=-1;
+  function rafLoop(){
+    const elapsed=ctx.currentTime-startAt;
+    const beat=Math.floor(elapsed/beatSec); // 0-3
+    const displayNum=4-beat; // 4→3→2→1
+    if(beat>=0 && beat<4 && displayNum!==shown){
+      shown=displayNum;
+      numEl.textContent=displayNum;
+      numEl.style.transform='scale(1.2)';
+      setTimeout(()=>numEl.style.transform='scale(1)',80);
+    }
+    if(elapsed < beatSec*4){
+      S.rafHandle=requestAnimationFrame(rafLoop);
+    } else {
+      ov.classList.add('hidden');
+      cb();
+    }
+  }
+  S.rafHandle=requestAnimationFrame(rafLoop);
+}
+
+function secPerUnit(bpm){ return 60/bpm/12; } // 1 unit = 1/48 bar
+
+// Schedule a click sound at an absolute AudioContext time
+function scheduleClick(strong, atTime){
+  const buf=strong?audioBufs.clickH:audioBufs.clickL;
+  if(!buf) return;
+  try{
+    const ctx=getCtx();
+    const src=ctx.createBufferSource();
+    src.buffer=buf;
+    src.connect(ctx.destination);
+    src.start(atTime);
+  }catch(e){}
+}
+
+// Schedule a piano note at an absolute AudioContext time
+function schedulePianoC(highC, atTime){
+  const buf=highC?audioBufs.highC:audioBufs.lowC;
+  if(!buf) return;
+  try{
+    const ctx=getCtx();
+    const src=ctx.createBufferSource();
+    src.buffer=buf;
+    src.connect(ctx.destination);
+    src.start(atTime);
+  }catch(e){}
+}
+
+function playMeasure(pat, lPat){
+  S.playing=true;
+  const ctx=getCtx();
+  const sp=secPerUnit(S.bpm);        // sec per 1/48 unit
+  const beatSec=sp*12;               // sec per quarter note
+  const curM=S.measure;
+  const measureSec=BAR*sp;           // total measure duration in sec
+  const EARLY_SEC=Math.min(0.18, beatSec*0.6);
+  // Extra grace after the last note activates before calling measure end
+  const lastNoteUnit=pat.reduce((a,n)=>a+NT[n].b, 0) - NT[pat[pat.length-1]].b;
+  const lastNoteSec=lastNoteUnit*sp;
+  const lastNoteDurSec=NT[pat[pat.length-1]].b*sp;
+  const LATE_SEC=Math.min(0.22, lastNoteDurSec*0.55);
+  const measureEndSec=measureSec+LATE_SEC;
+
+  // t0 = absolute audio time this measure starts
+  const t0=ctx.currentTime+0.02;
+  S.measureT0=t0;
+
+  // --- Schedule metronome clicks on audio timeline (sample-accurate) ---
+  for(let b=0;b<4;b++) scheduleClick(b===0, t0+b*beatSec);
+
+  // --- Pre-compute each note's absolute start time ---
+  const rSchedule=[];
+  let el=0;
+  pat.forEach((n,i)=>{
+    rSchedule.push({absT: t0+el*sp, idx:i, unit:el});
+    el+=NT[n].b;
+  });
+  S.noteScheduleR=rSchedule;
+
+  const lSchedule=[];
+  if(lPat){
+    let elL=0;
+    lPat.forEach((n,i)=>{
+      lSchedule.push({absT: t0+elL*sp, idx:i, unit:elL});
+      elL+=NT[n].b;
+    });
+  }
+  S.noteScheduleL=lSchedule;
+
+  // Arm note 0 immediately so taps right at the measure boundary register
+  S.armedHand=null; S.armedHandL=null;
+  S.armedIdx=-1; S.armedIdxL=-1;
+  S.curNoteL=-1; S.inLateGrace=false;
+
+  // --- rAF loop: sync visuals to audioCtx.currentTime ---
+  let lastRIdx=-1, lastLIdx=-1;
+  const slideLeadSec=Math.min(0.32, measureSec*0.5);
+
+  function rafLoop(){
+    if(!S.playing || S.measure!==curM){ return; }
+    const now=ctx.currentTime;
+    const elapsed=now-t0;
+
+    // Update unified playhead (both hands same x position)
+    // Clamp to measureSec so playhead doesn't go past the final barline
+    updatePlayheads(Math.min(elapsed, measureSec), measureSec, curM);
+
+    // Right hand: activate note when audioCtx time crosses its scheduled time
+    for(let i=rSchedule.length-1;i>=0;i--){
+      if(elapsed>=rSchedule[i].unit*sp){
+        if(lastRIdx!==i){
+          lastRIdx=i;
+          S.curNote=i;
+          if(S.rhits[i]!==null) S.armedHand=null;
+          drawStaff(`cvs-r-${curM}`,pat,S.rhits,i,false);
+          if(NT[pat[i]].rest){ S.rhits[i]=true; S.armedHand=null; }
+        }
+        break;
+      }
+    }
+
+    // Left hand
+    if(lPat){
+      for(let i=lSchedule.length-1;i>=0;i--){
+        if(elapsed>=lSchedule[i].unit*sp){
+          if(lastLIdx!==i){
+            lastLIdx=i;
+            S.curNoteL=i;
+            drawStaff(`cvs-l-${curM}`,lPat,S.lhits,i,false);
+            if(NT[lPat[i]].rest) S.lhits[i]=true;
+          }
+          break;
+        }
+      }
+    }
+
+    // Update curNote/curNoteL for reference (still used for drawStaff highlight)
+    // Armed state kept minimal - time-window tap detection handles everything
+
+    // Slide visual: start slightly before measure end
+    if(!S.slideDone && elapsed>=measureSec-slideLeadSec && S.measure<10){
+      S.slideDone=true;
+      slideTrackUp();
+    }
+
+    // Enter late grace window
+    if(elapsed>=measureSec && !S.inLateGrace){
+      S.inLateGrace=true;
+    }
+
+    // Measure end — wait for LATE_SEC grace after last note
+    if(elapsed>=measureEndSec){
+      S.playing=false; S.inLateGrace=false;
+      S.curNote=-1;
+      ['r','l'].forEach(h=>{ const p=document.getElementById('ph-'+h); if(p) p.style.opacity='0'; });
+
+      const rHit=S.rhits.filter((h,i)=>!NT[pat[i]].rest&&h===true).length;
+      const rTot=pat.filter(n=>!NT[n].rest).length;
+      let lHit=0,lTot=0;
+      if(lPat){
+        lHit=S.lhits.filter((h,i)=>!NT[lPat[i]].rest&&h===true).length;
+        lTot=lPat.filter(n=>!NT[n].rest).length;
+      }
+      S.measureResults.push({rHit,rTot,lHit,lTot});
+      S.totalHit+=rHit+lHit; S.totalNote+=rTot+lTot;
+      const allHit=(rHit===rTot)&&(lTot===0||lHit===lTot);
+      updateDot(S.measure-1,allHit?'ok':'miss');
+      drawStaff(`cvs-r-${curM}`,pat,S.rhits,-1,true);
+      if(lPat) drawStaff(`cvs-l-${curM}`,lPat,S.lhits,-1,true);
+      nextMeasure(false);
+      return;
+    }
+
+    S.rafHandle=requestAnimationFrame(rafLoop);
+  }
+
+  S.slideDone=false;
+  S.rafHandle=requestAnimationFrame(rafLoop);
+}
+
+// =====================
+// TAP
+// =====================
+function onTap(hand){
+  if(!S.playing && !S.inLateGrace) return;
+  warmAudio();
+  const btnId=hand==='r'?(S.mode==='both'?'tap-r':'tap-s'):'tap-l';
+  const btn=document.getElementById(btnId);
+  if(btn){ btn.classList.add('pressed'); setTimeout(()=>btn.classList.remove('pressed'),100); }
+
+  const pat  = hand==='r' ? S.measurePatterns[S.measure-1] : S.lPatterns[S.measure-1];
+  const hits = hand==='r' ? S.rhits : S.lhits;
+  if(!pat||!hits) return;
+
+  const now     = getCtx().currentTime;
+  const sp      = secPerUnit(S.bpm);
+  const elapsed = now - S.measureT0;
+  const EARLY_SEC = Math.min(0.20, sp*12*0.5);
+
+  // Compute which note index should currently be active based on elapsed time
+  // (same logic as rafLoop: last note whose start time <= elapsed)
+  let activeIdx=-1;
+  let elapsedUnits=0;
+  const noteStarts=[];
+  for(let i=0;i<pat.length;i++){
+    noteStarts.push(elapsedUnits*sp);
+    if(elapsed >= elapsedUnits*sp) activeIdx=i;
+    elapsedUnits+=NT[pat[i]].b;
+  }
+
+  let best=-1;
+
+  // 1) Currently time-active note, if unjudged and not a rest
+  if(activeIdx>=0 && !NT[pat[activeIdx]].rest && hits[activeIdx]===null){
+    best=activeIdx;
+  }
+
+  // 2) If active note already judged, find next unjudged non-rest note
+  //    that has already started or starts within EARLY_SEC
+  if(best<0){
+    for(let i=0;i<pat.length;i++){
+      if(!NT[pat[i]].rest && hits[i]===null){
+        if(elapsed >= noteStarts[i] - EARLY_SEC){ best=i; break; }
+      }
+    }
+  }
+
+  if(best<0) return;
+  hits[best]=true;
+  if(hand==='r') S.curNote=best; else S.curNoteL=best;
+  playPianoC(hand==='r');
+  showFb('Good!',true);
+  drawStaff(`cvs-${hand}-${S.measure}`,pat,hits,best,false);
+}
+
+
+// =====================
+// PLAYHEAD
+// =====================
+// Playhead is now driven purely from rAF using elapsed time ratio
+// so both hands stay perfectly in sync. movePH is no longer used.
+function updatePlayheads(elapsed, measureSec, curM){
+  const xS=XSTART, xE=390-8, us=xE-xS;
+  const ratio=Math.min(1, Math.max(0, elapsed/measureSec));
+  const xRatio=(xS+ratio*us)/390;
+  const vp=document.getElementById('staff-viewport');
+  if(!vp) return;
+  const vpRect=vp.getBoundingClientRect();
+
+  ['r','l'].forEach(hand=>{
+    const ph=document.getElementById('ph-'+hand);
+    const cvs=document.getElementById(`cvs-${hand}-${curM}`);
+    if(!ph||!cvs) return;
+    const rect=cvs.getBoundingClientRect();
+    ph.style.left=(rect.left-vpRect.left)+xRatio*rect.width+'px';
+    ph.style.top=(rect.top-vpRect.top)+'px';
+    ph.style.height=rect.height+'px';
+    ph.style.opacity= elapsed>=0 && elapsed<measureSec ? '1':'0';
+  });
+}
+
+// =====================
+// DOTS
+// =====================
+function updateDots(){
+  const el=document.getElementById('pdots');
+  el.innerHTML='';
+  for(let i=0;i<10;i++){
+    const d=document.createElement('div');
+    d.className='pdot'+(i+1===S.measure?' cur':i+1<S.measure?' done':'');
+    d.id='pdot'+i; el.appendChild(d);
+  }
+}
+function updateDot(idx,cls){
+  const d=document.getElementById('pdot'+idx);
+  if(d) d.className='pdot '+cls;
+}
+
+// =====================
+// FEEDBACK
+// =====================
+function showFb(msg,ok){
+  const el=document.getElementById('fb');
+  el.textContent=msg; el.className='fb show '+(ok?'ok':'ng');
+  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),700);
+}
+function hideFb(){ document.getElementById('fb').classList.remove('show'); }
+
+// =====================
+// FINAL RESULT
+// =====================
+function showFinalResult(){
+  const pct=S.totalNote>0?Math.round(S.totalHit/S.totalNote*100):100;
+  // Save best
+  setBest(S.level.id, S.mode, pct);
+  const prev=getBest(S.level.id, S.mode);
+
+  document.getElementById('r-stars').textContent=pct>=95?'⭐⭐⭐':pct>=75?'⭐⭐':'⭐';
+  document.getElementById('r-score').textContent=pct+'%';
+  document.getElementById('r-sub').textContent=`${S.totalHit} / ${S.totalNote} 正解　10小節完了`;
+  document.getElementById('r-best').textContent=prev!==null&&prev>=pct?`🏆 最高記録 ${prev}%`:(prev>pct?'':'🆕 自己ベスト更新！');
+
+  const barsEl=document.getElementById('r-bars');
+  barsEl.innerHTML='';
+  S.measureResults.forEach((mr,i)=>{
+    const tot=mr.rTot+(mr.lTot||0), hit=mr.rHit+(mr.lHit||0);
+    const p=tot>0?Math.round(hit/tot*100):100;
+    const col=p>=80?'#4CAF50':p>=50?'#FF9800':'#C0284A';
+    const row=document.createElement('div');
+    row.className='r-bar-row';
+    row.innerHTML=`<div class="r-bar-lbl">第${i+1}節</div>
+      <div class="r-bar-bg"><div class="r-bar-fill" style="width:${p}%;background:${col}"></div></div>
+      <div class="r-bar-pct">${p}%</div>`;
+    barsEl.appendChild(row);
+  });
+
+  document.getElementById('result-ov').classList.add('show');
+  document.getElementById('r-again').onclick=()=>{
+    document.getElementById('result-ov').classList.remove('show');
+    startSession(S.level);
+  };
+  document.getElementById('r-review').onclick=()=>{
+    document.getElementById('result-ov').classList.remove('show');
+    showReview();
+  };
+  document.getElementById('r-home').onclick=()=>{
+    document.getElementById('result-ov').classList.remove('show');
+    stopAll(); renderLevelList(); showScreen('home');
+  };
+}
+
+// =====================
+// REVIEW SCREEN
+// =====================
+let reviewTimers=[];
+let reviewPlaying=-1;
+
+function showReview(){
+  document.getElementById('review-title').textContent=S.level.name+' — 問題一覧';
+  buildReviewList();
+  showScreen('review');
+  document.getElementById('review-back').onclick=()=>{
+    stopReviewPlayback();
+    document.getElementById('result-ov').classList.add('show');
+    showScreen('game');
+  };
+}
+
+function buildReviewList(){
+  const list=document.getElementById('review-list');
+  list.innerHTML='';
+  const both=S.mode==='both';
+
+  S.measurePatterns.forEach((pat,mi)=>{
+    const lPat=both?S.lPatterns[mi]:null;
+    const mr=S.measureResults[mi]||{rHit:0,rTot:1,lHit:0,lTot:0};
+    const rTot=mr.rTot+(mr.lTot||0);
+    const rHit=mr.rHit+(mr.lHit||0);
+    const pct=rTot>0?Math.round(rHit/rTot*100):100;
+    const perfect=pct===100;
+
+    const item=document.createElement('div');
+    item.className='rv-item';
+    item.id='rv-item-'+mi;
+
+    // Header row
+    const hdr=document.createElement('div');
+    hdr.className='rv-header';
+    hdr.innerHTML=`
+      <span class="rv-num">第 ${mi+1} 小節</span>
+      <span class="rv-result ${perfect?'ok':'miss'}">${perfect?'✓ 完璧':'✗ '+pct+'%'}</span>
+      <div class="rv-play-btn" id="rv-play-${mi}">▶</div>`;
+    item.appendChild(hdr);
+
+    // Staff canvas(es)
+    const staffWrap=document.createElement('div');
+    staffWrap.className='rv-staff';
+
+    const makeCanvas=(id)=>{
+      const c=document.createElement('canvas');
+      c.className='scvs'; c.id=id; c.width=390; c.height=90;
+      c.style.borderRadius='8px';
+      c.style.border='1px solid var(--g1)';
+      return c;
+    };
+
+    if(both) staffWrap.innerHTML='<div style="font-size:10px;font-weight:700;color:var(--g3);margin-bottom:3px">右手</div>';
+    staffWrap.appendChild(makeCanvas('rv-cvs-r-'+mi));
+    if(both){
+      const lbl=document.createElement('div');
+      lbl.style.cssText='font-size:10px;font-weight:700;color:var(--g3);margin:6px 0 3px';
+      lbl.textContent='左手';
+      staffWrap.appendChild(lbl);
+      staffWrap.appendChild(makeCanvas('rv-cvs-l-'+mi));
+    }
+    item.appendChild(staffWrap);
+
+    item.addEventListener('click',()=>playMeasurePreview(mi, pat, lPat));
+    list.appendChild(item);
+
+    // Draw staves (after appended to DOM so canvas is real)
+    requestAnimationFrame(()=>{
+      const rhits=new Array(pat.length).fill(null);
+      const lhits=lPat?new Array(lPat.length).fill(null):[];
+      drawStaff('rv-cvs-r-'+mi, pat, rhits, -1, false);
+      if(lPat) drawStaff('rv-cvs-l-'+mi, lPat, lhits, -1, false);
+    });
+  });
+}
+
+let reviewRaf=null;
+
+function stopReviewPlayback(){
+  if(reviewRaf){ cancelAnimationFrame(reviewRaf); reviewRaf=null; }
+  reviewTimers.forEach(clearTimeout); reviewTimers=[];
+  if(reviewPlaying>=0){
+    const old=document.getElementById('rv-item-'+reviewPlaying);
+    if(old){ old.classList.remove('playing'); document.getElementById('rv-play-'+reviewPlaying).textContent='▶'; }
+    const pat=S.measurePatterns[reviewPlaying];
+    const lPat=S.mode==='both'?S.lPatterns[reviewPlaying]:null;
+    drawStaff('rv-cvs-r-'+reviewPlaying, pat, new Array(pat.length).fill(null), -1, false);
+    if(lPat) drawStaff('rv-cvs-l-'+reviewPlaying, lPat, new Array(lPat.length).fill(null), -1, false);
+    reviewPlaying=-1;
+  }
+}
+
+function playMeasurePreview(mi, pat, lPat){
+  stopReviewPlayback();
+  reviewPlaying=mi;
+  const item=document.getElementById('rv-item-'+mi);
+  const playBtn=document.getElementById('rv-play-'+mi);
+  item.classList.add('playing');
+  playBtn.textContent='■';
+
+  const ctx=getCtx();
+  const sp=secPerUnit(S.bpm);
+  const beatSec=sp*12;
+  const measureSec=BAR*sp;
+  const t0=ctx.currentTime+0.05;
+
+  const rhits=new Array(pat.length).fill(null);
+  const lhits=lPat?new Array(lPat.length).fill(null):[];
+  drawStaff('rv-cvs-r-'+mi, pat, rhits, -1, false);
+  if(lPat) drawStaff('rv-cvs-l-'+mi, lPat, lhits, -1, false);
+
+  // Schedule metronome + piano notes on audio timeline
+  for(let b=0;b<4;b++) scheduleClick(b===0, t0+b*beatSec);
+  let el=0;
+  pat.forEach((n,i)=>{ if(!NT[n].rest) schedulePianoC(true, t0+el*sp); el+=NT[n].b; });
+  if(lPat){ let elL=0; lPat.forEach((n,i)=>{ if(!NT[n].rest) schedulePianoC(false, t0+elL*sp); elL+=NT[n].b; }); }
+
+  // rAF drives visuals in sync with audioCtx.currentTime
+  let lastR=-1, lastL=-1;
+  const rUnits=[]; let elr=0; pat.forEach(n=>{ rUnits.push(elr); elr+=NT[n].b; });
+  const lUnits=[]; if(lPat){ let ell=0; lPat.forEach(n=>{ lUnits.push(ell); ell+=NT[n].b; }); }
+
+  function loop(){
+    const elapsed=ctx.currentTime-t0;
+    // right hand
+    for(let i=rUnits.length-1;i>=0;i--){
+      if(elapsed>=rUnits[i]*sp){ if(lastR!==i){ lastR=i; drawStaff('rv-cvs-r-'+mi,pat,rhits,i,false); } break; }
+    }
+    // left hand
+    if(lPat){ for(let i=lUnits.length-1;i>=0;i--){ if(elapsed>=lUnits[i]*sp){ if(lastL!==i){ lastL=i; drawStaff('rv-cvs-l-'+mi,lPat,lhits,i,false); } break; } } }
+
+    if(elapsed<measureSec){
+      reviewRaf=requestAnimationFrame(loop);
+    } else {
+      item.classList.remove('playing');
+      playBtn.textContent='▶';
+      drawStaff('rv-cvs-r-'+mi, pat, new Array(pat.length).fill(null), -1, false);
+      if(lPat) drawStaff('rv-cvs-l-'+mi, lPat, new Array(lPat.length).fill(null), -1, false);
+      reviewPlaying=-1;
+      reviewRaf=null;
+    }
+  }
+  reviewRaf=requestAnimationFrame(loop);
+}
+
+
+// =====================
+// STOP
+// =====================
+function clearMeasureTimers(){
+  S.timers.forEach(clearTimeout); S.timers=[];
+  if(S.rafHandle){ cancelAnimationFrame(S.rafHandle); S.rafHandle=null; }
+}
+function stopAll(){
+  clearMeasureTimers();
+  S.playing=false; S.curNote=-1; S.curNoteL=-1;
+  S.armedHand=null; S.armedHandL=null;
+  document.getElementById('precount').classList.add('hidden');
+  document.getElementById('result-ov').classList.remove('show');
+  ['r','l'].forEach(h=>{ const p=document.getElementById('ph-'+h); if(p) p.style.opacity='0'; });
+}
+
+// =====================
+// STAFF DRAWING
+// =====================
+const PAL={ line:'#CCCAC6', note:'#1A1917', acc:'#C0284A', ok:'#388E3C', miss:'#C62828', rest:'#8A8884', triplet:'#5C3ADE' };
+const XSTART=52;
+const STEM_LEN=28;   // stem length in px
+const BEAM_H=4;      // beam bar height
+const BEAM_GAP=6;    // gap between double beams
+
+function noteColor(hits, i, finalState, isActive){
+  const h=hits[i];
+  if(finalState) return h===true?PAL.ok:PAL.miss;
+  return isActive?PAL.acc:h===true?PAL.ok:h===false?PAL.miss:PAL.note;
+}
+
+// Compute stem-top X for a note at canvas-x position cx
+function stemX(cx){ return cx+5.5; }
+// Stem top Y (where beam connects)
+function stemTopY(NY){ return NY-STEM_LEN; }
+
+function drawStaff(canvasId, notes, hits, activeIdx, finalState){
+  const cvs=document.getElementById(canvasId);
+  if(!cvs) return;
+  const W=390, H=90;
+  cvs.width=W; cvs.height=H;
+  const ctx=cvs.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  const ST=14, LG=13, SH=LG*4;
+
+  // Staff lines
+  ctx.strokeStyle=PAL.line; ctx.lineWidth=0.8;
+  for(let i=0;i<5;i++){
+    ctx.beginPath(); ctx.moveTo(20,ST+i*LG); ctx.lineTo(W-6,ST+i*LG); ctx.stroke();
+  }
+  // Clef
+  ctx.font='38px serif'; ctx.fillStyle=PAL.note;
+  ctx.fillText('𝄞',-1,ST+LG*4+3);
+  // Time sig
+  ctx.font='bold 13px system-ui,sans-serif';
+  ctx.fillText('4',26,ST+9); ctx.fillText('4',26,ST+LG*3+1);
+
+  const xS=XSTART, xE=W-8, us=xE-xS;
+  const NY=ST+LG*2; // notehead y
+  const SY=stemTopY(NY); // beam / stem-top y
+
+  // Compute center-x for each note
+  const cxPos=[];
+  let pos=0;
+  notes.forEach(n=>{
+    const w=NT[n].b/BAR*us;
+    cxPos.push(xS+(pos/BAR)*us + w/2);
+    pos+=NT[n].b;
+  });
+
+  // ---- Build beam groups ----
+  // Beamable single-value types (not triplets, not tied, not rests, not h/q/dq)
+  const beamable=new Set(['e','s','de']);
+  const beamGroups=[];
+  let bgStart=-1;
+  notes.forEach((n,i)=>{
+    if(beamable.has(n)){
+      if(bgStart<0) bgStart=i;
+    } else {
+      if(bgStart>=0 && i-bgStart>1) beamGroups.push({from:bgStart, to:i-1});
+      bgStart=-1;
+    }
+  });
+  if(bgStart>=0 && notes.length-bgStart>1) beamGroups.push({from:bgStart, to:notes.length-1});
+
+  // ---- Build triplet groups ----
+  const tripletGroups=[];
+  let tgStart=-1;
+  notes.forEach((n,i)=>{
+    if(NT[n].triplet){
+      if(tgStart<0) tgStart=i;
+    } else {
+      if(tgStart>=0){ tripletGroups.push({from:tgStart,to:i-1}); tgStart=-1; }
+    }
+  });
+  if(tgStart>=0) tripletGroups.push({from:tgStart,to:notes.length-1});
+
+  // ---- Draw primary beams (one per beam group) ----
+  beamGroups.forEach(bg=>{
+    // Determine color from group context
+    const anyActive=bg.from<=activeIdx&&activeIdx<=bg.to;
+    const col=finalState
+      ? (notes.slice(bg.from,bg.to+1).some((_,j)=>hits[bg.from+j]===false)?PAL.miss:PAL.ok)
+      : anyActive?PAL.acc:PAL.note;
+
+    const sx1=stemX(cxPos[bg.from]);
+    const sx2=stemX(cxPos[bg.to]);
+
+    // Primary beam: connect all stems in group
+    ctx.strokeStyle=col; ctx.lineWidth=BEAM_H;
+    ctx.lineCap='butt';
+    ctx.beginPath();
+    ctx.moveTo(sx1, SY);
+    ctx.lineTo(sx2, SY);
+    ctx.stroke();
+
+    // Secondary beam: only for 16th-note runs within the group
+    // Draw contiguous sub-spans where note is 's' or 'de' (16th-level)
+    let run=-1;
+    for(let i=bg.from; i<=bg.to+1; i++){
+      const is16= i<=bg.to && (notes[i]==='s'||notes[i]==='de');
+      if(is16){
+        if(run<0) run=i;
+      } else {
+        if(run>=0){
+          const runLen=i-run;
+          if(runLen===1){
+            // Single 16th in middle of 8th group: draw short partial beam toward next note
+            const dir= i<=bg.to ? 1 : -1; // extend toward neighbor
+            const sx=stemX(cxPos[run]);
+            const ext= dir===1
+              ? stemX(cxPos[i]) // toward right neighbor
+              : stemX(cxPos[run-1]); // toward left neighbor
+            const midX=(sx+ext)/2;
+            ctx.strokeStyle=col; ctx.lineWidth=BEAM_H;
+            ctx.beginPath();
+            ctx.moveTo(Math.min(sx,midX), SY+BEAM_GAP);
+            ctx.lineTo(Math.max(sx,midX), SY+BEAM_GAP);
+            ctx.stroke();
+          } else {
+            // Contiguous 16th run: full secondary beam across the span
+            const sx1r=stemX(cxPos[run]);
+            const sx2r=stemX(cxPos[i-1]);
+            ctx.strokeStyle=col; ctx.lineWidth=BEAM_H;
+            ctx.beginPath();
+            ctx.moveTo(sx1r, SY+BEAM_GAP);
+            ctx.lineTo(sx2r, SY+BEAM_GAP);
+            ctx.stroke();
+          }
+          run=-1;
+        }
+      }
+    }
+  });
+
+  // ---- Draw triplet brackets + "3" ----
+  tripletGroups.forEach(tg=>{
+    const x1=cxPos[tg.from]-NT[notes[tg.from]].b/BAR*us/2;
+    const x2=cxPos[tg.to]+NT[notes[tg.to]].b/BAR*us/2;
+    const bktY=SY-8;
+    ctx.strokeStyle=PAL.triplet; ctx.lineWidth=1.2;
+    ctx.beginPath();
+    ctx.moveTo(x1,bktY+5); ctx.lineTo(x1,bktY);
+    ctx.lineTo(x2,bktY);   ctx.lineTo(x2,bktY+5);
+    ctx.stroke();
+    ctx.fillStyle=PAL.triplet; ctx.font='bold 9px system-ui,sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('3',(x1+x2)/2,bktY-1);
+    ctx.textAlign='left';
+  });
+
+  // ---- Draw each note ----
+  notes.forEach((n,i)=>{
+    const nt=NT[n];
+    const cx=cxPos[i];
+    const w=nt.b/BAR*us;
+    const xLeft=cx-w/2;
+    const isAct=i===activeIdx;
+    const inBG=beamGroups.some(bg=>i>=bg.from&&i<=bg.to);
+
+    const col=noteColor(hits,i,finalState,isAct);
+    const restCol=finalState?PAL.rest:isAct?PAL.acc:PAL.rest;
+
+    if(isAct){
+      ctx.fillStyle='rgba(192,40,74,.07)';
+      ctx.beginPath(); ctx.roundRect(xLeft-2,ST-3,w+4,SH+6,4); ctx.fill();
+    }
+
+    if(nt.rest){
+      drawRest(ctx,n,cx,ST,LG,restCol);
+    } else if(nt.tied){
+      drawTiedNotes(ctx,nt,xLeft,w,ST,LG,col);
+    } else {
+      drawNoteShape(ctx,n,cx,NY,SY,col,inBG);
+    }
+  });
+
+  // Final barline
+  ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(xE,ST); ctx.lineTo(xE,ST+SH); ctx.stroke();
+  ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(xE+4,ST); ctx.lineTo(xE+4,ST+SH); ctx.stroke();
+}
+
+// Draw a single note: head + stem + flags (if not beamed)
+function drawNoteShape(ctx,type,cx,NY,SY,col,inBeam){
+  ctx.fillStyle=col; ctx.strokeStyle=col;
+  const open=type==='h';
+  ctx.beginPath(); ctx.ellipse(cx,NY,5.5,4,-.28,0,Math.PI*2);
+  if(open){ ctx.lineWidth=1.5; ctx.stroke(); } else { ctx.fill(); }
+
+  // Stem
+  const sx=stemX(cx);
+  ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(sx,NY); ctx.lineTo(sx,SY); ctx.stroke();
+  ctx.lineCap='butt';
+
+  // Flags — only when not inside a beam group
+  if(!inBeam){
+    if(type==='e')   drawFlag(ctx,sx,SY,col,1);
+    if(type==='s')   drawFlag(ctx,sx,SY,col,2);
+    if(type==='de'){ drawFlag(ctx,sx,SY,col,1); dotMark(ctx,cx+10,NY,col); }
+    if(type==='t3e') drawFlag(ctx,sx,SY,col,1);
+  } else {
+    // dot still needed for de even when beamed
+    if(type==='de') dotMark(ctx,cx+10,NY,col);
+  }
+  if(type==='dq') dotMark(ctx,cx+10,NY,col);
+}
+
+function drawFlag(ctx,sx,sy,col,n){
+  ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.lineCap='round';
+  for(let f=0;f<n;f++){
+    const fy=sy+f*7;
+    ctx.beginPath(); ctx.moveTo(sx,fy); ctx.bezierCurveTo(sx+11,fy+5,sx+11,fy+12,sx,fy+12); ctx.stroke();
+  }
+  ctx.lineCap='butt';
+}
+function dotMark(ctx,x,y,col){ ctx.fillStyle=col; ctx.beginPath(); ctx.arc(x,y-1,2.2,0,Math.PI*2); ctx.fill(); }
+
+function drawTiedNotes(ctx,nt,xLeft,totalW,ST,LG,col){
+  const NY=ST+LG*2;
+  const SY=stemTopY(NY);
+  let pos=0;
+  const cxs=[];
+  nt.parts.forEach(p=>{
+    const nb=NT[p].b;
+    const cx=xLeft+(pos/nt.b)*totalW+(nb/nt.b)*totalW/2;
+    cxs.push(cx);
+    drawNoteShape(ctx,p,cx,NY,SY,col,false);
+    pos+=nb;
+  });
+  if(cxs.length>=2){
+    const arcY=NY-33;
+    ctx.strokeStyle=col; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(cxs[0]+5,arcY+4);
+    ctx.bezierCurveTo(cxs[0]+9,arcY-6,cxs[cxs.length-1]-4,arcY-6,cxs[cxs.length-1]+5,arcY+4);
+    ctx.stroke();
+  }
+}
+
+function drawRest(ctx,type,x,ST,LG,col){
+  const ry=ST+LG*0.8;
+  ctx.fillStyle=col; ctx.strokeStyle=col; ctx.lineWidth=1.6;
+  if(type==='hr'){
+    ctx.fillRect(x-9,ST+LG*2,18,6);
+  } else if(type==='qr'||type==='t3er'){
+    ctx.beginPath();
+    ctx.moveTo(x,ry); ctx.lineTo(x+5,ry+5); ctx.lineTo(x-5,ry+10);
+    ctx.lineTo(x+5,ry+15); ctx.lineTo(x,ry+20); ctx.stroke();
+  } else if(type==='er'){
+    ctx.beginPath(); ctx.moveTo(x-3,ry+14); ctx.lineTo(x+5,ry); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x-2,ry+2,2.8,0,Math.PI*2); ctx.fill();
+  } else if(type==='sr'){
+    ctx.beginPath(); ctx.moveTo(x-3,ry+16); ctx.lineTo(x+5,ry); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x-2,ry+2,2.2,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x-1,ry+9,2.2,0,Math.PI*2); ctx.fill();
+  }
+}
+
+// =====================
+// INIT
+// =====================
+buildHome();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+
+</body>
+</html>
